@@ -1,0 +1,122 @@
+body {
+	width: 420px;
+	display: flex;
+	background-color: rgb(51, 51, 51);
+	--text-color: white;
+	--hilighted-item-color: rgb(88, 88, 88);
+	flex-direction: column;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+h1 {
+	color: var(--text-color);
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+h2 {
+	color: var(--text-color);
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+h3 {
+	display: flex;
+	color: var(--text-color);
+	font-family: Arial, Helvetica, sans-serif;
+	margin: 0px;
+	width: 100%;
+	align-items: center;
+	box-sizing: border-box;
+}
+
+button {
+	display: flex;
+}
+
+.save-session-container {
+	display: flex;
+	height: 30px;
+}
+
+.export-import-session-container {
+	display: flex;
+	height: 30px;
+	justify-content: space-around;
+	margin-top: 15px;
+}
+
+#save-session-text {
+	display: flex;
+	resize: none;
+	flex: 1;
+	font-size: 20px;
+	border-radius: 5px;
+	box-sizing: border-box;
+	padding-left: 5px;
+}
+
+#save-session-button {
+	display: flex;
+	font-size: 20px;
+	font-family: Arial, Helvetica, sans-serif;
+	border-radius: 5px;
+	border: 0px;
+	align-items: center;
+	justify-content: center;
+	margin-left: 10px;
+}
+
+#saved-sessions {
+	box-sizing: border-box;
+	border-top: 1px solid white;
+	border-bottom: 1px solid white;
+	flex-direction: column;
+	overflow-y: overlay;
+	height: 200px;
+}
+
+#saved-sessions::-webkit-scrollbar {
+	width: 10px;
+}
+
+/* Track */
+#saved-sessions::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+/* Handle */
+#saved-sessions::-webkit-scrollbar-thumb {
+	background-color: white;
+	border-radius: 10px;
+}
+
+.saved-session-item {
+	display: flex;
+	justify-content: space-between;
+	margin: 5px 0;
+	padding: 5px 5px;
+	border-radius: 5px;
+	transition: all ease-in-out 200ms;
+}
+
+.saved-session-item:hover {
+	background-color: var(--hilighted-item-color);
+}
+
+.saved-session-item span {
+	display: flex;
+	justify-content: space-between;
+	height: 30px;
+	box-sizing: border-box;
+}
+
+.saved-session-item-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 60px;
+	border-radius: 5px;
+	border: 0px;
+	font-size: 15px;
+	margin: 0 5px;
+}

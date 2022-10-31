@@ -1,0 +1,11 @@
+{
+  "name": "Window Saver",
+  "description": "Saves And Loads Windows",
+  "version": "1.0",
+  "action": {
+      "default_popup": "popup.html",
+      "default_title": "Save Window"
+   },
+	"permissions": [ "tabs", "tabGroups", "storage" ],
+  "manifest_version": 3
+}
