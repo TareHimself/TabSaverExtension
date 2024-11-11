@@ -3,24 +3,37 @@ async function createTabAndGetId(url, windowId) {
 }
 
 
-async function createWindow({ incognito, groups }) {
-	const urlsToCreateWith = groups['none|-1'] || [];
+async function createWindow(data) {
+	const incognito = data.shift()
 
-	const newWindow = await chrome.windows.create({ incognito: incognito, url: urlsToCreateWith });
 
-	const groupsList = Object.keys(groups).filter(group => group !== 'none|-1');
-	for (let i = 0; i < groupsList.length; i++) {
-		const currentGroup = groups[groupsList[i]];
 
-		const ids = (await Promise.allSettled(currentGroup.map(url => createTabAndGetId(url, newWindow.id)))).map(promise => promise.value);
+	let currentGroupId = "NOGROUP"
+	let groups = {}
+	data.forEach((d) => {
+		if (d.startsWith('[') && d.endsWith(']')) {
+			currentGroupId = d.slice(1, -1)
+
+			groups[currentGroupId] = []
+		}
+		else {
+			groups[currentGroupId].push(d)
+		}
+	})
+
+	const newWindow = await chrome.windows.create({ incognito: incognito === 'true', url: groups["NOGROUP"] || [] });
+
+	delete groups["NOGROUP"]
+
+	Object.keys(groups).forEach(async (groupId) => {
+
+
+		const ids = (await Promise.allSettled(groups[groupId].map(url => createTabAndGetId(url, newWindow.id)))).map(promise => promise.value)
 
 		const newGroupId = await chrome.tabs.group({ createProperties: { windowId: newWindow.id }, tabIds: ids });
 
-		console.log(groupsList[i]);
-
-		await chrome.tabGroups.update(newGroupId, { title: groupsList[i].split('|')[0] });
-
-	}
+		await chrome.tabGroups.update(newGroupId, { title: groupId.split('|')[0] });
+	})
 }
 
 async function onButtonClicked(event) {
@@ -29,8 +42,7 @@ async function onButtonClicked(event) {
 	const op = event.target.getAttribute('data-op');
 
 	if (op === 'l') {
-		const JsonItem = JSON.parse((await chrome.storage.sync.get(id))[id])
-		createWindow(JsonItem);
+		createWindow((await chrome.storage.sync.get([id]))[id].split('\n'));
 	} else if (op === 'd') {
 		await chrome.storage.sync.remove(id);
 	}
@@ -79,38 +91,44 @@ async function tabsToJson() {
 	for (let i = 0; i < groups.length; i++) {
 		const groupId = groups[i];
 		if (groupId < 0) {
-			groupIdLookup[groupId] = `none|${groupId}`;
+			groupIdLookup[groupId] = `NOGROUP`;
 		}
 		else {
 			groupIdLookup[groupId] = `${(await chrome.tabGroups.get(groupId)).title}|${groupId}`;
 		}
 	}
 
-	return tabs.map((tab) => {
+	const groupedUrls = tabs.map((tab) => {
 		return { url: tab.url, groupId: tab.groupId }
 	}).reduce((data, tab) => {
+		if (!data[groupIdLookup[tab.groupId]]) data[groupIdLookup[tab.groupId]] = [];
 
-		if (!data.groups[groupIdLookup[tab.groupId]]) data.groups[groupIdLookup[tab.groupId]] = [];
-
-		data.groups[groupIdLookup[tab.groupId]].push(tab.url);
+		data[groupIdLookup[tab.groupId]].push(tab.url);
 
 		return data;
-	}, { groups: {}, incognito: currentWindow.incognito })
+	}, {})
+
+	const finalData = [`${currentWindow.incognito}`]
+
+	Object.keys(groupedUrls).forEach((groupId) => {
+		finalData.push(`[${groupId}]`)
+		groupedUrls[groupId].forEach((url) => {
+			finalData.push(`${url}`)
+		})
+	})
+
+	return finalData
 }
 
 async function onSaveWindowClicked() {
 	try {
+		const nameToSaveAs = document.getElementById('save-session-text').value || (new Date()).toLocaleString();
+
 		const result = await tabsToJson();
-
-		const currentDate = new Date();
-
-		const nameToSaveAs = document.getElementById('save-session-text').value || currentDate.toLocaleString();
 
 		const itemToSave = {};
 
-		itemToSave[nameToSaveAs] = JSON.stringify(result);
-
-		await chrome.storage.sync.set(itemToSave);
+		await chrome.storage.sync.set({ [nameToSaveAs]: result.join('\n') });
 
 		await generateSavedList();
 	} catch (error) {
@@ -120,14 +138,14 @@ async function onSaveWindowClicked() {
 }
 
 async function generateDownloadLink() {
-	const tabsStringified = JSON.stringify(await tabsToJson(), null, 4); //indentation in json format, human readable
+	const tabsStringified = (await tabsToJson()).join('\n'); //indentation in json format, human readable
 
 	const vBlob = new Blob([tabsStringified], { type: "octet/stream" });
 
 	const downloadButton = document.getElementById('export-session-button')
 
 	downloadButton.setAttribute('href', window.URL.createObjectURL(vBlob));
-	downloadButton.setAttribute('download', 'tabs.json');
+	downloadButton.setAttribute('download', 'tabs.txt');
 
 }
 
